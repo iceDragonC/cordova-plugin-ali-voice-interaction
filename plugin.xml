@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="@fubaobaoxian/cordova-plugin-ali-voice-interaction" version="1.0.6" xmlns="http://apache.org/cordova/ns/plugins/1.0"
+<plugin id="@fubaobaoxian/cordova-plugin-ali-voice-interaction" version="1.0.7" xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android">
     <name>AliVoiceInteraction</name>
     <js-module name="AliVoiceInteraction" src="www/AliVoiceInteraction.js">
@@ -58,7 +58,7 @@
         <header-file src="src/ios/token/TokenHttpRequest.h"  />
         <source-file src="src/ios/token/TokenHttpRequest.m"/>
 
-        <framework src="libs/ios/nuisdk.framework"/>
+        <framework custom="true" src="libs/ios/nuisdk.framework"/>
         <framework src="AudioToolbox.framework"/>
         <framework src="AdSupport.framework"/>
         <framework src="SystemConfiguration.framework"/>
