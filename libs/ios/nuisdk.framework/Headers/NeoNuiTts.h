@@ -75,6 +75,8 @@ typedef enum NuiSdkTtsEvent NuiSdkTtsEvent;
                    value:(const char *)value;
 
 -(const char *) nui_tts_get_param:(const char *)param;
+
+-(int) nui_tts_get_num_of_chars:(const char *)param;
 @end
 
 #endif /* NeoNuiTts_h */
