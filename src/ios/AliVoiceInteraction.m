@@ -2,7 +2,6 @@
 #import <AdSupport/AdSupport.h>
 #import "AliVoiceInteraction.h"
 #import "NuiSdkUtils.h"
-#import <nuisdk/NeoNui.h>
 
 /********* AliVoiceInteraction.m Cordova Plugin Implementation *******/
 

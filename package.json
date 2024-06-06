@@ -1,12 +1,12 @@
 {
   "_args": [
     [
-      "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.4"
+      "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.5"
     ]
   ],
   "_development": true,
-  "_from": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.4",
-  "_id": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.4",
+  "_from": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.5",
+  "_id": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.5",
   "_inBundle": false,
   "_integrity": "sha512-jNisgodUmfdGwYk4QCsY3fZnALLZBEYd+Nk/vOo+M507qXX11RuWkm3KvcSr0t6MYtHJWyPFtlLi6tiv8kwMYQ==",
   "_location": "/@fubaobaoxian/cordova-plugin-ali-voice-interaction",
@@ -14,19 +14,19 @@
   "_requested": {
     "type": "version",
     "registry": true,
-    "raw": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.4",
+    "raw": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.5",
     "name": "@fubaobaoxian/cordova-plugin-ali-voice-interaction",
     "escapedName": "@fubaobaoxian%2fcordova-plugin-ali-voice-interaction",
     "scope": "@fubaobaoxian",
-    "rawSpec": "1.0.4",
+    "rawSpec": "1.0.5",
     "saveSpec": null,
-    "fetchSpec": "1.0.4"
+    "fetchSpec": "1.0.5"
   },
   "_requiredBy": [
     "#DEV:/"
   ],
-  "_resolved": "https://registry.npmmirror.com/@fubaobaoxian/cordova-plugin-ali-voice-interaction/-/cordova-plugin-ali-voice-interaction-1.0.4.tgz",
-  "_spec": "1.0.4",
+  "_resolved": "https://registry.npmmirror.com/@fubaobaoxian/cordova-plugin-ali-voice-interaction/-/cordova-plugin-ali-voice-interaction-1.0.5.tgz",
+  "_spec": "1.0.5",
   "author": {
     "name": "dev@fubaobaoxian.com"
   },
@@ -65,5 +65,5 @@
     "test": "npm run eslint"
   },
   "types": "./types/index.d.ts",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

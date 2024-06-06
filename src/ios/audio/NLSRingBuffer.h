@@ -14,12 +14,9 @@
 @interface NlsRingBuffer : NSObject
 
 -(id) init:(int)size_in_byte;
--(int) realloc;
--(int) try_realloc;
 -(int) ringbuffer_empty;
--(int) ringbuffer_full;
--(int) ringbuffer_size;
--(int) ringbuffer_read:(unsigned char*)buf Length:(unsigned int)len;
--(int) ringbuffer_write:(unsigned char*)buf Length:(unsigned int)len;
--(void) ringbuffer_reset;
+-(int)  ringbuffer_full;
+-(int)  ringbuffer_read:(unsigned char*)buf Length:(unsigned int)len;
+-(int)  ringbuffer_write:(unsigned char*)buf Length:(unsigned int)len;
+-(void)  ringbuffer_reset;
 @end

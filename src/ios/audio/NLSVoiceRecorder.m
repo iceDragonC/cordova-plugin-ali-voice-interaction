@@ -20,9 +20,9 @@ typedef enum {
     STATE_INIT = 0,
     STATE_START,
     STATE_STOP
-} NlsVoiceRecorderState;
+}NlsVoiceRecorderState;
 
-static dispatch_queue_t gRecorderQueue;
+NSString * const kNlsVoiceRecorderErrorDomain = @"NlsVoiceRecorderErrorDomain";
 
 #pragma mark - NlsVoiceRecorder Implementation
 
@@ -40,11 +40,12 @@ static dispatch_queue_t gRecorderQueue;
 
 @implementation NlsVoiceRecorder
 
--(id)init {
+-(id)init{
     self = [super init];
-    if (self) {
+    if(self){
+        
         static BOOL _audioSessionInited = NO;
-        if (!_audioSessionInited) {
+        if(!_audioSessionInited){
             // Force to initialize the audio session once, but deprecated in iOS 7. See apple doc for more
             _audioSessionInited = YES;
             AudioSessionInitialize(NULL, NULL, NULL, NULL);
@@ -52,13 +53,11 @@ static dispatch_queue_t gRecorderQueue;
         self.bufferedVoiceData = [NSMutableData data];
         // register for app resign/active notifications for recorder state
         [self _registerForBackgroundNotifications];
-
-        gRecorderQueue = dispatch_queue_create("NuiAudioRecorder", DISPATCH_QUEUE_CONCURRENT);
     }
     return self;
 }
 
--(void)dealloc {
+-(void)dealloc{
     [self _unregisterForBackgroundNotifications];
 
     [self stop:NO];
@@ -68,7 +67,7 @@ static dispatch_queue_t gRecorderQueue;
     self.originCategory=nil;
 }
 
--(void)start {
+-(void)start{
     // perform the permission check
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
     self.originCategory = audioSession.category;
@@ -104,41 +103,42 @@ static dispatch_queue_t gRecorderQueue;
 
     //    [audioSession setInputDataSource:AVAudioSessionOrientationBack error:nil];
     if ([audioSession respondsToSelector:@selector(requestRecordPermission:)]) {
-        [audioSession performSelector:@selector(requestRecordPermission:) withObject:^(BOOL allow) {
-            if (allow) {
+        [audioSession performSelector:@selector(requestRecordPermission:) withObject:^(BOOL allow){
+            if(allow){
                 [self _start];
-            } else {
+                
+            }else{
                 // no permission
                 ;
             }
         }];
-    } else {
+    }else{
         [self _start];
     }
 }
 
--(void)_start {
-    if (self.state == STATE_START) {
+-(void)_start{
+    if(self.state == STATE_START){
         NSLog(@"in recorder _start, state has started!");
         return;
     }
     
-    if ([self _createAudioQueue] && [self _startAudioQueue]) {
+    if([self _createAudioQueue] && [self _startAudioQueue]){
         self.bufferedVoiceData = [NSMutableData data];
         self.state = STATE_START;
         // we're started, notify the delegate
-        if ([_delegate respondsToSelector:@selector(recorderDidStart)]) {
-            dispatch_async(gRecorderQueue, ^{
+        if([_delegate respondsToSelector:@selector(recorderDidStart)]){
+            dispatch_async(dispatch_get_main_queue(), ^{
                 [self->_delegate recorderDidStart];
             });
         }
-    } else {
+    }else{
         ;
     }
 }
 
--(void)stop:(BOOL)shouldNotify {
-    if (self.state == STATE_STOP) {
+-(void)stop:(BOOL)shouldNotify{
+    if(self.state == STATE_STOP){
         NSLog(@"in recorder stop, state has stopped!");
         return;
     }
@@ -151,24 +151,24 @@ static dispatch_queue_t gRecorderQueue;
     self.bufferedVoiceData = nil;
     [[AVAudioSession sharedInstance] setCategory:self.originCategory error:nil];
     
-    if (shouldNotify && _delegate) {
-        dispatch_async(gRecorderQueue, ^{
+    if(shouldNotify && _delegate){
+        dispatch_async(dispatch_get_main_queue(), ^{
             [self->_delegate recorderDidStop];
         });
     }
 }
 
--(BOOL)isStarted {
+-(BOOL)isStarted{
     return self.state == STATE_START;
 }
 
 #pragma mark - Internal implementations
 
--(void)_updateCurrentVoiceVolume {
+-(void)_updateCurrentVoiceVolume{
     if (mQueue) {
         //FIXME - delay calculate the volume
         static int skipFrame = 0;
-        if (skipFrame++ == 3) {
+        if(skipFrame++ == 3){
             skipFrame = 0;
             // 如果要获得多个通道数据，需要用数组
             // 这里没有去处理多个通道的数据显示,直接就显示最后一个通道的结果了
@@ -191,14 +191,14 @@ static void inputBufferHandler(void *                          inUserData,
     @autoreleasepool {
         
         NlsVoiceRecorder *recorder = (__bridge NlsVoiceRecorder*) inUserData;
-        if (recorder.isStarted) {
+        if(recorder.isStarted){
             // 有时候AuduioQueueBuffer大小并非是预设的640，需要缓冲
             NSData *frame = [recorder _bufferPCMFrame:inBuffer];
-            if (frame) {
+            if(frame){
                 [recorder _handleVoiceFrame:frame];
             }
             AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
-        } else {
+        }else{
             NSLog(@"WARN: - recorder is stopped, ignoring the callback data %d bytes",(int)inBuffer->mAudioDataByteSize);
         }
     }
@@ -208,8 +208,8 @@ static void inputBufferHandler(void *                          inUserData,
  * Allocate audio queue and buffers
  */
 -(BOOL) _createAudioQueue{
-    @synchronized(self) {
-        if (mQueue != NULL) {
+    @synchronized(self){
+        if(mQueue != NULL){
             return YES;
         }
         // parameters 设置AudioQueue相关参数
@@ -237,7 +237,7 @@ static void inputBufferHandler(void *                          inUserData,
 }
 
 -(void) _disposeAudioQueue{
-    if (mQueue == NULL) {
+    if(mQueue == NULL){
         return;
     }
     
@@ -254,12 +254,12 @@ static void inputBufferHandler(void *                          inUserData,
     AudioQueueBufferRef queueBuffer;
     for (int i = 0; i < QUEUE_BUFFER_COUNT; ++i) {
         queueBuffer = NULL;
-        if ((result = AudioQueueAllocateBuffer(mQueue, QUEUE_BUFFER_SIZE, &queueBuffer) != noErr)) {
+        if((result = AudioQueueAllocateBuffer(mQueue, QUEUE_BUFFER_SIZE, &queueBuffer) != noErr)){
             NSLog(@"AudioQueueAllocateBuffer error %d", (int)result);
             [self _disposeAudioQueue];
             return NO;
         }
-        if ((result = AudioQueueEnqueueBuffer(mQueue, queueBuffer, 0, NULL)) != noErr) {
+        if((result = AudioQueueEnqueueBuffer(mQueue, queueBuffer, 0, NULL)) != noErr) {
             NSLog(@"AudioQueueEnqueueBuffer error %d", (int)result);
             [self _disposeAudioQueue];
             return NO;
@@ -280,7 +280,7 @@ static void inputBufferHandler(void *                          inUserData,
 }
 
 -(void) _stopAudioQueue{
-    if (mQueue == NULL) {
+    if(mQueue == NULL){
         return;
     }
     AudioQueueStop(mQueue, true);
@@ -304,7 +304,7 @@ static void inputBufferHandler(void *                          inUserData,
     
     [_bufferedVoiceData appendBytes:aqBuffer->mAudioData length:nBytesToCopy];
     
-    if (_bufferedVoiceData.length == PCM_FRAME_BYTE_SIZE) {
+    if(_bufferedVoiceData.length == PCM_FRAME_BYTE_SIZE){
         // buffer is full
         NSData *frame = [NSData dataWithData:_bufferedVoiceData];
         // reset the buffer
@@ -322,10 +322,10 @@ static void inputBufferHandler(void *                          inUserData,
 
 -(void) _handleVoiceFrame:(NSData*)voiceFrame {
     [self _updateCurrentVoiceVolume];
-    if (_delegate) {
-        if (/* DISABLES CODE */ (true)) {
+    if(_delegate){
+        if(/* DISABLES CODE */ (true)){
             [_delegate voiceRecorded:voiceFrame];
-        } else {
+        }else{
             [((NSObject*)_delegate) performSelectorOnMainThread:@selector(voiceRecorded:) withObject:voiceFrame waitUntilDone:NO];
         }
     }

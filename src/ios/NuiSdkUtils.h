@@ -20,6 +20,8 @@
 //create dir for saving files
 -(NSString *)createDir;
 
+-(NSString*) genInitParams;
+
 -(void) getTicket:(NSMutableDictionary*) dict;
 
 -(void) getAuthTicket:(NSMutableDictionary*) dict;
