@@ -45,7 +45,6 @@ typedef enum PlayerState PlayerState;
     AudioQueueRef audioQueue;
     // 音频缓存
     AudioQueueBufferRef audioQueueBuffers[QUEUE_BUFFER_SIZE];
-    
 }
 @property(nonatomic,assign) id<NlsPlayerDelegate> delegate;
 
@@ -56,6 +55,7 @@ typedef enum PlayerState PlayerState;
 -(void)drain;
 -(void)cleanup;
 -(void)setstate :(PlayerState)state;
+-(void)setsamplerate :(int)sr;
 -(int)write:(const char*)buffer Length:(int)len;
--(int)GetAudioData:(AudioQueueBufferRef)buffer;
+-(int)getAudioData:(AudioQueueBufferRef)buffer;
 @end

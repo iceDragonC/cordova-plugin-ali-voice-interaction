@@ -6,64 +6,66 @@
 //  Copyright © 2019 Alibaba idst. All rights reserved.
 //
 
-//#define DEBUG_MODE
-
 #import "NLSPlayAudio.h"
 #import "pthread.h"
 #import "NLSRingBuffer.h"
 
-static UInt32 gBufferSizeBytes=2048;//It must be pow(2,x)
-
-
-//RINGBUFFER_NEW(ring_buf, 16000)
+static UInt32 gBufferSizeBytes = 2048;//It must be pow(2,x)
+static dispatch_queue_t gPlayerQueue;
 
 @interface NLSPlayAudio() {
     int state;
     NlsRingBuffer* ring_buf;
+    UInt32 sample_rate;
 }
-
 @end
 
 @implementation NLSPlayAudio
 
-- (id) init {
+- (id)init {
     self = [super init];
-    ring_buf = [[NlsRingBuffer alloc] init:16000];
+    sample_rate = 16000;
+    //若合成文本超长，或多份文本在未播放完的情况下进行快速连续合成，需要考虑ringbuf是不是不足以储存合成的音频数据。
+    //若无法及时取走合成的音频数据，会导致SDK上报std::bad_alloc系统内存错误。目前ringbuf分配最大内存 sample_rate * 1024字节。
+    ring_buf = [[NlsRingBuffer alloc] init:sample_rate];
 
     [self cleanup];
     
+    gPlayerQueue = dispatch_queue_create("NuiAudioPlayerController", DISPATCH_QUEUE_CONCURRENT);
+
     ///设置音频参数
-    audioDescription.mSampleRate  = 16000;//采样率Hz
+    audioDescription.mSampleRate  = sample_rate; //采样率Hz
     audioDescription.mFormatID    = kAudioFormatLinearPCM;
-    audioDescription.mFormatFlags =  kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsNonInterleaved;
+    audioDescription.mFormatFlags = kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsNonInterleaved;
     audioDescription.mChannelsPerFrame = 1;
     audioDescription.mFramesPerPacket  = 1;//每一个packet一侦数据
     audioDescription.mBitsPerChannel   = 16;//av_get_bytes_per_sample(AV_SAMPLE_FMT_S16)*8;//每个采样点16bit量化
     audioDescription.mBytesPerPacket   = 2;
     audioDescription.mBytesPerFrame    = 2;
     audioDescription.mReserved = 0;
-    
+
     //使用player的内部线程播 创建AudioQueue
     AudioQueueNewOutput(&audioDescription, bufferCallback, (__bridge void *)(self), nil, nil, 0, &audioQueue);
-    if(audioQueue)
-    {
+    if (audioQueue) {
+        TLog(@"audioplayer: AudioQueueNewOutput success.");
         Float32 gain=1.0;
         //设置音量
         AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, gain);
-        ////添加buffer区 创建Buffer
-        for(int i=0;i < NUM_BUFFERS; i++) {
+        //添加buffer区 创建Buffer
+        for (int i = 0; i < NUM_BUFFERS; i++) {
             int result = AudioQueueAllocateBuffer(audioQueue, gBufferSizeBytes, &audioQueueBuffers[i]);
             AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffers[i], 0, NULL);
-            TLog(@"audioplayer: AudioQueueAllocateBuffer i = %d,result = %d",i,result);
+            TLog(@"audioplayer: AudioQueueAllocateBuffer i = %d,result = %d", i, result);
         }
+    } else {
+        TLog(@"audioplayer: AudioQueueNewOutput failed.");
     }
+
     return self;
 }
 
-- (void)primePlayQueueBuffers
-{
-    for (int t = 0; t < NUM_BUFFERS; ++t)
-    {
+- (void)primePlayQueueBuffers {
+    for (int t = 0; t < NUM_BUFFERS; ++t) {
         TLog(@"audioplayer: buffer %d available size %d", t, audioQueueBuffers[t]->mAudioDataBytesCapacity);
         bufferCallback((__bridge void *)(self), audioQueue, audioQueueBuffers[t]);
     }
@@ -74,7 +76,8 @@ static UInt32 gBufferSizeBytes=2048;//It must be pow(2,x)
     TLog(@"audioplayer: Audio Play Start >>>>>");
     state = playing;
     [self reset];
-    dispatch_async(dispatch_get_main_queue(), ^{
+
+    dispatch_async(gPlayerQueue, ^{
         TLog(@"audioplayer: Audio Play async ...");
         if (audioQueue) {
             [self primePlayQueueBuffers];
@@ -91,56 +94,103 @@ static UInt32 gBufferSizeBytes=2048;//It must be pow(2,x)
         }
         TLog(@"audioplayer: Audio Play async finish");
     });
+
     TLog(@"audioplayer: Audio Play done");
 }
 
 - (void)pause {
-    state = paused;
+    if (state != draining) {
+        state = paused;
+    }
     if (audioQueue) {
         AudioQueuePause(audioQueue);
     }
 }
 
 - (void)resume {
-    state = playing;
+    if (state != draining) {
+        state = playing;
+    }
     if (audioQueue) {
         AudioQueueStart(audioQueue, NULL);
     }
 }
-- (void) setstate:(PlayerState)pstate{
+- (void)setstate:(PlayerState)pstate {
     state = pstate;
 }
 
+- (void)setsamplerate:(int)sr {
+    if (sr != sample_rate) {
+        sample_rate = sr;
+        //若合成文本超长，或多份文本在未播放完的情况下进行快速连续合成，需要考虑ringbuf是不是不足以储存合成的音频数据。
+        //若无法及时取走合成的音频数据，会导致SDK上报std::bad_alloc系统内存错误。目前ringbuf分配最大内存 sample_rate * 1024字节。
+        ring_buf = [[NlsRingBuffer alloc] init:sample_rate];
+
+        [self cleanup];
+
+        TLog(@"setsamplerate: set sample_rate %d", sample_rate);
+        ///设置音频参数
+        audioDescription.mSampleRate  = sample_rate; //采样率Hz
+        audioDescription.mFormatID    = kAudioFormatLinearPCM;
+        audioDescription.mFormatFlags = kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsNonInterleaved;
+        audioDescription.mChannelsPerFrame = 1;
+        audioDescription.mFramesPerPacket  = 1;//每一个packet一侦数据
+        audioDescription.mBitsPerChannel   = 16;//av_get_bytes_per_sample(AV_SAMPLE_FMT_S16)*8;//每个采样点16bit量化
+        audioDescription.mBytesPerPacket   = 2;
+        audioDescription.mBytesPerFrame    = 2;
+        audioDescription.mReserved = 0;
+
+        //使用player的内部线程播 创建AudioQueue
+        AudioQueueNewOutput(&audioDescription, bufferCallback, (__bridge void *)(self), nil, nil, 0, &audioQueue);
+        if (audioQueue) {
+            Float32 gain=1.0;
+            //设置音量
+            AudioQueueSetParameter(audioQueue, kAudioQueueParam_Volume, gain);
+            //添加buffer区 创建Buffer
+            for (int i = 0; i < NUM_BUFFERS; i++) {
+                int result = AudioQueueAllocateBuffer(audioQueue, gBufferSizeBytes, &audioQueueBuffers[i]);
+                AudioQueueEnqueueBuffer(audioQueue, audioQueueBuffers[i], 0, NULL);
+                TLog(@"audioplayer: AudioQueueAllocateBuffer i = %d,result = %d",i,result);
+            }
+        }
+        TLog(@"setsamplerate: set sample_rate %d done.", sample_rate);
+    }
+}
 
 - (int)write:(const char*)buffer Length:(int)len {
     int wait_time_ms = 0;
     int ret = 0;
     while (1) {
-        if(wait_time_ms > 3000) {
+        if (wait_time_ms > 3000) {
             TLog(@"wait for 3s, player must not consuming pcm data. overrun...");
             break;
         }
         TLog(@"ringbuf want write data %d",  len);
         int ret = [ring_buf ringbuffer_write:(unsigned char*)buffer Length:len];
-//        int ret = ringbuffer_write(&ring_buf, (unsigned char*)buffer, (unsigned int)len);
-        TLog(@"ringbuf write data %d",  ret);
+        TLog(@"ringbuf writed data %d",  ret);
+        if (len != 0 && ret == 0) {
+            int realloc_ret = [ring_buf try_realloc];
+            if (realloc_ret == 0) {
+                TLog(@"ringbuf try_realloc, size of buffer is: %d", [ring_buf ringbuffer_size]);
+            }
+        }
         if (state != playing) {
             break;
         }
         if (ret <= 0) {
-            usleep(20000);
-            wait_time_ms += 20;
+            usleep(10000);
+            wait_time_ms += 10;
             continue;
         } else {
+            wait_time_ms = 0;
             break;
         }
     }
     return ret;
 }
 
--(void) reset {
+-(void)reset {
     [ring_buf ringbuffer_reset];
-//    ringbuffer_reset(&ring_buf);
     if (audioQueue) {
         TLog(@"audioplayer: Flush reset");
         //AudioQueueReset(audioQueue);
@@ -157,33 +207,34 @@ static UInt32 gBufferSizeBytes=2048;//It must be pow(2,x)
 }
 
 -(void)drain {
+    TLog(@"audioplayer: Audio Player Draining");
     state = draining;
 }
 
 -(void)cleanup {
     [ring_buf ringbuffer_reset];
-//    ringbuffer_reset(&ring_buf);
     state = idle;
-    if(audioQueue)
-    {
+    if (audioQueue) {
         TLog(@"audioplayer: Release AudioQueueNewOutput");
         
         AudioQueueFlush(audioQueue);
         AudioQueueReset(audioQueue);
         AudioQueueStop(audioQueue, TRUE);
-        for(int i=0; i < QUEUE_BUFFER_SIZE; i++)
-        {
+        for (int i = 0; i < QUEUE_BUFFER_SIZE; i++) {
             AudioQueueFreeBuffer(audioQueue, audioQueueBuffers[i]);
             audioQueueBuffers[i] = nil;
         }
+        AudioQueueDispose(audioQueue, true);
         audioQueue = nil;
+    } else {
+        TLog(@"audioplayer: has released AudioQueueNewOutput");
     }
 }
 
 //回调函数(Callback)的实现
-static void bufferCallback(void *inUserData,AudioQueueRef inAQ,AudioQueueBufferRef buffer) {
+static void bufferCallback(void *inUserData,AudioQueueRef inAQ, AudioQueueBufferRef buffer) {
     NLSPlayAudio* player = (__bridge NLSPlayAudio *)inUserData;
-    int ret = [player GetAudioData:buffer];
+    int ret = [player getAudioData:buffer];
     if (ret > 0) {
         OSStatus status = AudioQueueEnqueueBuffer(inAQ, buffer, 0, NULL);
         TLog(@"audioplayer: playCallback status %d.", status);
@@ -192,8 +243,9 @@ static void bufferCallback(void *inUserData,AudioQueueRef inAQ,AudioQueueBufferR
         if (player->state == draining) {
             //drain data finish, stop player.
             [player stop];
-            if([player->_delegate respondsToSelector:@selector(playerDidFinish)]){
-               dispatch_async(dispatch_get_main_queue(), ^{
+
+            if ([player->_delegate respondsToSelector:@selector(playerDidFinish)]) {
+               dispatch_async(gPlayerQueue, ^{
                    [player->_delegate playerDidFinish];
                });
             }
@@ -201,15 +253,14 @@ static void bufferCallback(void *inUserData,AudioQueueRef inAQ,AudioQueueBufferR
     }
 }
 
-- (int)GetAudioData:(AudioQueueBufferRef)buffer {
+- (int)getAudioData:(AudioQueueBufferRef)buffer {
     if (buffer == NULL || buffer->mAudioData == NULL) {
         TLog(@"no more data to play");
         return 0;
     }
     while (1) {
         int ret = [ring_buf ringbuffer_read:(unsigned char*)buffer->mAudioData Length:buffer->mAudioDataBytesCapacity];
-//        int ret = ringbuffer_read(&ring_buf, (unsigned char*)buffer->mAudioData, buffer->mAudioDataBytesCapacity);
-//        TLog(@"ringbuf read data %d;state:%d",  ret, state);
+//        TLog(@"ringbuf read data %d; state:%d",  ret, state);
 
         if (0 < ret) {
             TLog(@"ringbuf read data %d",  ret);
@@ -225,5 +276,6 @@ static void bufferCallback(void *inUserData,AudioQueueRef inAQ,AudioQueueBufferR
     }
     return 0;
 }
+
 
 @end
