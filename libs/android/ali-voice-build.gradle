@@ -1,0 +1,11 @@
+repositories {
+    jcenter()
+}
+repositories {
+  flatDir {
+    dirs 'libs'
+  }
+}
+dependencies {
+   implementation(name: 'nuisdk-release', ext: 'aar')
+}

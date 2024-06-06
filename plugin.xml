@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="@fubaobaoxian/cordova-plugin-ali-voice-interaction" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>AliVoiceInteraction</name>
+    <js-module name="AliVoiceInteraction" src="www/AliVoiceInteraction.js">
+        <clobbers target="AliVoiceInteraction"/>
+    </js-module>
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="AliVoiceInteraction">
+                <param name="android-package" value="ali.voice.interaction.AliVoiceInteraction"/>
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml"/>
+        <source-file src="src/android/AliVoiceInteraction.java" target-dir="src/ali/voice/interaction/"/>
+        <source-file src="src/android/Utils.java" target-dir="src/ali/voice/interaction/"/>
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <!-- 必须要有的权限 -->
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <!-- 必须要有的权限 end -->
+        </config-file>
+
+        <framework custom="true" src="libs/android/ali-voice-build.gradle" type="gradleReference"/>
+        <source-file src="libs/android/nuisdk-release.aar" target-dir="app/libs/"/>
+        <source-file src="libs/android/fastjson-1.1.46.android.jar" target-dir="app/libs/"/>
+    </platform>
+    <platform name="ios">
+        <config-file parent="/*" target="config.xml">
+            <feature name="AliVoiceInteraction">
+                <param name="ios-package" value="AliVoiceInteraction"/>
+            </feature>
+        </config-file>
+
+        <config-file parent="NSMicrophoneUsageDescription" target="*-Info.plist">
+            <string>我需要录音权限才能工作</string>
+        </config-file>
+
+        <header-file src="src/ios/AliVoiceInteraction.h"/>
+        <source-file src="src/ios/AliVoiceInteraction.m"/>
+        <source-file src="src/ios/NuiSdkUtils.h"/>
+        <source-file src="src/ios/NuiSdkUtils.m"/>
+
+        <header-file src="src/ios/audio/NLSPlayAudio.h"  />
+        <source-file src="src/ios/audio/NLSPlayAudio.mm"/>
+        <header-file src="src/ios/audio/NLSRingBuffer.h"  />
+        <source-file src="src/ios/audio/NLSRingBuffer.mm"/>
+        <header-file src="src/ios/audio/NLSVoiceRecorder.h"  />
+        <source-file src="src/ios/audio/NLSVoiceRecorder.m"/>
+
+
+        <header-file src="src/ios/token/AccessToken.h"  />
+        <source-file src="src/ios/token/AccessToken.m"/>
+        <header-file src="src/ios/token/TokenHttpRequest.h"  />
+        <source-file src="src/ios/token/TokenHttpRequest.m"/>
+
+
+        <framework src="AudioToolbox.framework"/>
+        <framework src="AdSupport.framework"/>
+        <framework src="libiconv.tbd"/>
+        <framework  custom="true" src="libs/ios/nuisdk.framework"/>
+        <resource-file src="libs/ios/nuisdk.framework/Resources.bundle"/>
+    </platform>
+</plugin>

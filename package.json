@@ -1,0 +1,69 @@
+{
+  "_args": [
+    [
+      "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.0"
+    ]
+  ],
+  "_development": true,
+  "_from": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.0",
+  "_id": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.0",
+  "_inBundle": false,
+  "_integrity": "sha512-jNisgodUmfdGwYk4QCsY3fZnALLZBEYd+Nk/vOo+M507qXX11RuWkm3KvcSr0t6MYtHJWyPFtlLi6tiv8kwMYQ==",
+  "_location": "/@fubaobaoxian/cordova-plugin-ali-voice-interaction",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "@fubaobaoxian/cordova-plugin-ali-voice-interaction@1.0.0",
+    "name": "@fubaobaoxian/cordova-plugin-ali-voice-interaction",
+    "escapedName": "@fubaobaoxian%2fcordova-plugin-ali-voice-interaction",
+    "scope": "@fubaobaoxian",
+    "rawSpec": "1.0.0",
+    "saveSpec": null,
+    "fetchSpec": "1.0.0"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmmirror.com/@fubaobaoxian/cordova-plugin-ali-voice-interaction/-/cordova-plugin-ali-voice-interaction-1.0.0.tgz",
+  "_spec": "1.0.0",
+  "author": {
+    "name": "dev@fubaobaoxian.com"
+  },
+  "bugs": {
+    "url": "https://github.com/iceDragonC/cordova-plugin-device/issues"
+  },
+  "cordova": {
+    "id": "@fubaobaoxian/cordova-plugin-ali-voice-interaction",
+    "platforms": [
+      "android",
+      "ios",
+      "windows",
+      "browser",
+      "osx"
+    ]
+  },
+  "description": "Cordova Device Plugin",
+  "homepage": "https://github.com/iceDragonC/cordova-plugin-device#readme",
+  "keywords": [
+    "cordova",
+    "device",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios",
+    "cordova-windows",
+    "cordova-browser",
+    "cordova-osx"
+  ],
+  "name": "@fubaobaoxian/cordova-plugin-ali-voice-interaction",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/iceDragonC/cordova-plugin-device.git"
+  },
+  "scripts": {
+    "eslint": "node node_modules/eslint/bin/eslint www && node node_modules/eslint/bin/eslint src && node node_modules/eslint/bin/eslint tests",
+    "test": "npm run eslint"
+  },
+  "types": "./types/index.d.ts",
+  "version": "1.0.0"
+}
